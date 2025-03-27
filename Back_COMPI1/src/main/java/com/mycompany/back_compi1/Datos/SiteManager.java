@@ -79,7 +79,7 @@ public class SiteManager {
 
         String siteName = request.getParams().get(0);
         String pageName = request.getParams().get(1);
-        String fullSection = "[" + siteName + "." + pageName + "]";
+        String fullSection = "\n[" + siteName + "." + pageName + "]\n";
 
         if (!siteExists(siteName)) {
             return ERROR + ": el sitio " + siteName + " no existe";
@@ -94,7 +94,7 @@ public class SiteManager {
             return ERROR + ": error al leer el archivo.";
         }
 
-        String newEntry = "\n" + fullSection + "\n nombre = " + pageName;
+        String newEntry = fullSection + "\n nombre = \"" + pageName + "\"\n";
 
         try (BufferedWriter writer = new BufferedWriter(new FileWriter(configFile, true))) {
             writer.write(newEntry);
