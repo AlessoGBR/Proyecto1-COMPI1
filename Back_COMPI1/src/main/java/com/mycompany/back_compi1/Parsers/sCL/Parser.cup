@@ -1,0 +1,55 @@
+package com.mycompany.back_compi1.Parsers.sCL;
+
+import java_cup.runtime.*;
+import com.mycompany.back_compi1.Parsers.SCLRequest;
+import java.util.ArrayList;
+import java.util.List;
+
+parser code{:
+
+    private SCLRequest request;
+
+    public SCLRequest getRequest() {
+            return request;
+    }
+
+    public void syntax_error(Symbol token) {
+        System.out.println("Syntax error: " + token.value + " at line " + token.left);
+    }
+
+    public void unrecovered_syntax_error(Symbol token) {
+
+    }
+
+:}
+
+terminal String ID;
+terminal CREAR, AGREGAR, ELIMINAR, MODIFICAR, SITIO, PAGINA;
+non terminal SCLRequest scl_command;
+non terminal String accion, objetivo;
+non terminal ArrayList<String> params;
+
+start with scl_command;
+
+scl_command ::= accion:a objetivo:b params:p
+    {:
+        RESULT = new SCLRequest( a , b , p);
+    :}
+    ;
+
+accion ::=
+    CREAR     {: RESULT = "crear";     :}
+  | AGREGAR   {: RESULT = "agregar";   :}
+  | ELIMINAR  {: RESULT = "eliminar";  :}
+  | MODIFICAR {: RESULT = "modificar"; :}
+  ;
+
+objetivo ::=
+    SITIO     {: RESULT = "sitio";  :}
+  | PAGINA    {: RESULT = "pagina"; :}
+  ;
+
+params ::=
+    ID:p params:ps {: ps.add(0, p); RESULT = ps; :}
+  | ID:p           {: RESULT = new ArrayList<String>(); RESULT.add(p); :}
+  ;

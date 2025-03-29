@@ -23,18 +23,21 @@ parser code{:
 
 :}
 
-terminal String ID, BODY;
-terminal String CREAR, ELIMINAR, AGREGAR, MODIFICAR;
+terminal String BODY, SCL_TEXT;
 terminal GET, POST, PATCH, DELETE, SITIO, PAGINA;
 
 non terminal SHTTPRequest shttp_request;
-non terminal String method, target, body, accion,objetivo, scl_instruction;
-non terminal ArrayList<String> params;
+non terminal String method, target, body,scl_instruction, scl_part;
 
 start with shttp_request;
 
 shttp_request ::= method:m target:t scl_instruction:s body:b
     {:
+    System.out.println("Parser: creando SHTTPRequest con:");
+            System.out.println(" - Método: " + m);
+            System.out.println(" - Target: " + t);
+            System.out.println(" - Instrucción: " + s);
+            System.out.println(" - Body: " + (b != null ? b : ""));
         RESULT = new SHTTPRequest(m, t, s, (b != null ? b : ""));
     :}
     ;
@@ -47,40 +50,24 @@ method  ::=
     ;
 
 target  ::=
-    SITIO   {: RESULT = "SITIO";   :} |
-    PAGINA  {: RESULT = "PAGINA";   :}
+    SITIO: sit  {: RESULT = "SITIO";   :} |
+    PAGINA: pag  {: RESULT = "PAGINA";   :}
     ;
 
-
-scl_instruction ::= accion:a objetivo:b params:p
-    {:
-        RESULT = a + " " + b + " " + (p.isEmpty() ? "" : " " + String.join(" ", p));
-    :}
+scl_instruction ::=
+    scl_part:part scl_instruction:rest
+        {: RESULT = part + " " + rest; :}
+    | scl_part:part
+        {: RESULT = part; :}
     ;
 
-accion ::=
-    CREAR     {: RESULT = "crear"; :} |
-    AGREGAR   {: RESULT = "agregar"; :} |
-    ELIMINAR  {: RESULT = "eliminar"; :} |
-    MODIFICAR {: RESULT = "modificar"; :}
+scl_part ::=
+    SCL_TEXT:text {: RESULT = text; :}
+    | SITIO   {: RESULT = "sitio"; :}
+    | PAGINA  {: RESULT = "pagina"; :}
     ;
 
-objetivo ::=
-    SITIO   {: RESULT = "sitio " ; :} |
-    PAGINA  {: RESULT = "pagina " ; :}
-    ;
-
-params ::= ID:p params:ps
-    {:
-        ps.add(0, p);
-        RESULT = ps;
-    :}
-    | ID:p
-    {:
-        RESULT = new ArrayList<>(List.of(p));
-    :}
-    ;
-
-body ::= BODY:b          {: RESULT = b;    :}
+body ::=  BODY:b {: RESULT = b;    :} |
+        {: RESULT = "";:}
   ;
 

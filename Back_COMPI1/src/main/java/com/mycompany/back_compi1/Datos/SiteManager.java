@@ -4,6 +4,7 @@
  */
 package com.mycompany.back_compi1.Datos;
 
+import com.mycompany.back_compi1.Parsers.SCLRequest;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
@@ -19,6 +20,9 @@ import java.nio.file.Files;
 public class SiteManager {
 
     private File configFile;
+    private static final String SUCCESS = "SUCCES";
+    private static final String NOT_FOUND = "NOT_FOUND";
+    private static final String ERROR = "INTERNARL_SERVER_ERROR";
 
     public SiteManager() {
         String projectDir = System.getProperty("user.dir");
@@ -44,7 +48,7 @@ public class SiteManager {
 
     public String createSite(String siteName) {
         if (siteExists(siteName)) {
-            System.out.println("El sitio ya existe en el archivo.");            
+            System.out.println("El sitio ya existe en el archivo.");
             return "El sitio ya existe.";
         }
 
@@ -56,7 +60,7 @@ public class SiteManager {
             System.out.println("Error al escribir en el archivo TOML.");
             return "Error al escribir en el archivo TOML.";
         }
-        
+
         return "Sitio agregado correctamente";
     }
 
@@ -70,26 +74,94 @@ public class SiteManager {
         }
     }
 
-    public String getSite(String siteName) {
+    public String getSite(SCLRequest request) {
+        if (request.getParams().size() < 1) {
+            return ERROR + ": se necesita el nombre de un sitio";
+        }
+
+        String siteName = request.getParams().get(0);
         try (BufferedReader reader = new BufferedReader(new FileReader(configFile))) {
+            StringBuilder response = new StringBuilder();
+            boolean inSection = false;
             String line;
-            boolean found = false;
-            StringBuilder siteInfo = new StringBuilder();
 
             while ((line = reader.readLine()) != null) {
-                if (line.startsWith("[" + siteName + "]")) {
-                    found = true;
-                    siteInfo.append(line).append("\n");
-                } else if (found && line.startsWith("[")) {
-                    break; 
-                } else if (found) {
-                    siteInfo.append(line).append("\n");
+                if (line.trim().equals("[" + siteName + "]")) {
+                    inSection = true;
+                    response.append(SUCCESS + ": ");
+                    continue;
+                }
+
+                if (inSection) {
+                    if (line.trim().startsWith("[")) {
+                        break;
+                    }
+                    if (!line.trim().isEmpty() && !line.trim().startsWith("#")) {
+                        response.append(line);
+                    }
                 }
             }
 
-            return found ? siteInfo.toString() : "Sitio no encontrado.";
+            return inSection ? response.toString() : NOT_FOUND + ": ";
         } catch (IOException e) {
-            return "Error al leer el archivo.";
+            return ERROR + ": " + e.getMessage();
         }
     }
+
+    public String getPagina(SCLRequest request) {
+        if (request.getParams().size() < 2) {
+            return ERROR + ": Se requiere nombre del sitio y página";
+        }
+
+        String siteName = request.getParams().get(0);
+        String pageName = request.getParams().get(1);
+        String fullSection = "[" + siteName + "." + pageName + "]";
+
+        try (BufferedReader reader = new BufferedReader(new FileReader(configFile))) {
+            StringBuilder response = new StringBuilder();
+            boolean inSection = false;
+            String line;
+
+            while ((line = reader.readLine()) != null) {
+                if (line.trim().equals(fullSection)) {
+                    inSection = true;
+                    response.append(SUCCESS);
+                    continue;
+                }
+
+                if (inSection) {
+                    if (line.trim().startsWith("[")) {
+                        break;
+                    }
+                    if (!line.trim().isEmpty() && !line.trim().startsWith("#")) {
+                        response.append(line);
+                    }
+                }
+            }
+
+            return inSection ? response.toString() : SUCCESS + ": ";
+        } catch (IOException e) {
+            return ERROR + ": " + e.getMessage();
+        }
+    }
+
+    public String processRequest(SCLRequest request) {
+        switch (request.getAccion()) {
+            case "obtener":
+                break;
+            case "abrir":
+                switch (request.getObjetivo()) {
+                    case "sitio":
+                        return getSite(request);
+                    case "pagina":
+                        return getPagina(request);
+                    default:
+                        return ERROR + ": Objetivo no reconocido: " + request.getObjetivo();
+                }
+            default:
+                return ERROR + ": Acción no soportada: " + request.getAccion();
+        }
+        return "";
+    }
+
 }

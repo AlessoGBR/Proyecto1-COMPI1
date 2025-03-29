@@ -6,11 +6,15 @@ package com.mycompany.back_compi1.Server;
 
 import com.mycompany.back_compi1.Datos.Response;
 import com.mycompany.back_compi1.Datos.SiteManager;
+import com.mycompany.back_compi1.Lexer.sCL.sCLLexer;
 import com.mycompany.back_compi1.Lexer.sHTTP.sHTTPLexer;
+import com.mycompany.back_compi1.Parsers.SCLRequest;
 import com.mycompany.back_compi1.Parsers.SHTTPRequest;
+import com.mycompany.back_compi1.Parsers.sCL.ParserScl;
 import com.mycompany.back_compi1.Parsers.sHTTP.Parser;
 import java.io.BufferedReader;
 import java.io.StringReader;
+import java_cup.runtime.Symbol;
 
 /**
  *
@@ -19,43 +23,46 @@ import java.io.StringReader;
 public class RequestHandler {
 
     private SiteManager siteManager;
+    private SHTTPRequest shttpRequest;
+    private SCLRequest sclRequest;
 
     public RequestHandler() {
         this.siteManager = new SiteManager();
     }
 
     public Response processRequest(String message) {
-        SHTTPRequest request = null;
+        
         try {
             sHTTPLexer lexer = new sHTTPLexer(new BufferedReader(new StringReader(message)));
             Parser parser = new Parser(lexer);
-            Object resultado = parser.parse().value;
-            System.out.println("parser result: " + resultado);
-            System.out.println("tipo de resultado: " + resultado.getClass().getName());
-            if (resultado instanceof SHTTPRequest) {
-                request = (SHTTPRequest) resultado;
-            }
+            shttpRequest = (SHTTPRequest) parser.parse().value;
+            sCLLexer sclLexer = new sCLLexer(new BufferedReader(new StringReader(shttpRequest.getInstruction())));
+            ParserScl parserScl = new ParserScl(sclLexer);
+            sclRequest = (SCLRequest) parserScl.parse().value;
+            
         } catch (Exception e) {
-            throw new RuntimeException("Error en el parseo de sHTTP: " + e.getMessage(), e);
+            return new Response("ERROR -> ", "ERROR INESPERADO: " + e);
         }
 
-        switch (request.getMethod()) {
+        switch (shttpRequest.getMethod()) {
             case "GET":
-                return handleGet(request);
+                return handleGet(shttpRequest);
             case "POST":
-                return handlePost(request);
+                return handlePost(shttpRequest);
             case "DELTE":
-                return handleDelete(request);
+                return handleDelete(shttpRequest);
             case "PATCH":
-                return handlePatch(request);
+                return handlePatch(shttpRequest);
             default:
-                return new Response("ERROR -> ", "Metodo desconocido");
+                return new Response("ERROR -> ", "Objetivo desconocido");
         }
     }
 
     private Response handleGet(SHTTPRequest request) {
         if ("SITIO".equals(request.getTarget())) {
-            return new Response("EXITO -> ", siteManager.getSite(request.getInstruction()));
+            return new Response("RESPUESTA -> ", siteManager.getSite(sclRequest));
+        } else if ("PAGINA".equals(request.getTarget())) {
+            return new Response("RESPUESTA -> ", siteManager.getPagina(sclRequest));
         }
         return new Response("ERROR -> ", "Objetivo desconocido");
     }

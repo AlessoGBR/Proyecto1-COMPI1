@@ -20,12 +20,7 @@ PATCH = "PATCH"
 SITIO = "SITIO"
 PAGINA = "PAGINA"
 
-CREAR = "crear"
-AGREGAR = "agregar"
-ELIMINAR = "eliminar"
-MODIFICAR = "modificar"
-
-ID = [a-zA-Z_][a-zA-Z0-9_]*
+SCL_TEXT = [a-zA-Z0-9_]+( [a-zA-Z0-9_]+)*
 BODY = \"[^\"]*\"
 WHITESPACE = [ \t\r\n]+
 
@@ -43,6 +38,10 @@ WHITESPACE = [ \t\r\n]+
     private void addError(String message) {
         System.err.println("Error léxico en línea " + (yyline+1) + ", columna " + (yycolumn+1) + ": " + message);
     }
+
+    private void debugToken(String tokenType, String value) {
+            System.out.println("[LEXER] Token reconocido: " + tokenType + " -> '" + value + "'");
+        }
 %}
 
 %eofval{
@@ -50,17 +49,13 @@ WHITESPACE = [ \t\r\n]+
 %eofval}
 
 %%
-{GET}     { return  symbol(ParserSym.GET, yytext()); }
-{POST}    { return  symbol(ParserSym.POST, yytext()); }
-{PATCH}   { return  symbol(ParserSym.PATCH, yytext()); }
-{DELETE}  { return  symbol(ParserSym.DELETE, yytext()); }
-{SITIO}   { return  symbol(ParserSym.SITIO, yytext().toUpperCase()); }
-{PAGINA}  { return  symbol(ParserSym.PAGINA, yytext().toUpperCase()); }
-{CREAR}    { return  symbol(ParserSym.CREAR, yytext()); }
-{ELIMINAR} { return  symbol(ParserSym.ELIMINAR, yytext()); }
-{AGREGAR}  { return  symbol(ParserSym.AGREGAR, yytext()); }
-{MODIFICAR} { return  symbol(ParserSym.MODIFICAR, yytext()); }
-{BODY} { return  symbol(ParserSym.BODY, yytext()); }
-{ID}       { return  symbol(ParserSym.ID, yytext()); }
+{GET}     { debugToken("GET", yytext()); return symbol(ParserSym.GET, yytext()); }
+{POST}    { debugToken("POST", yytext()); return symbol(ParserSym.POST, yytext()); }
+{PATCH}   { debugToken("PATCH", yytext()); return symbol(ParserSym.PATCH, yytext()); }
+{DELETE}  { debugToken("DELETE", yytext()); return symbol(ParserSym.DELETE, yytext()); }
+{SITIO}   { debugToken("SITIO", yytext()); return symbol(ParserSym.SITIO, yytext().toUpperCase()); }
+{PAGINA}  { debugToken("PAGINA", yytext()); return symbol(ParserSym.PAGINA, yytext().toUpperCase()); }
+{SCL_TEXT} { debugToken("SCL_TEXT", yytext()); return symbol(ParserSym.SCL_TEXT, yytext()); }
+{BODY}    { debugToken("BODY", yytext()); return symbol(ParserSym.BODY, yytext()); }
 {WHITESPACE} { /* Ignorar espacios */ }
 .         { addError("Carácter no reconocido: " + yytext()); }
