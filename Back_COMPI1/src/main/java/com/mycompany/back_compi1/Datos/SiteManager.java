@@ -42,10 +42,10 @@ public class SiteManager {
         return configFile.getAbsolutePath();
     }
 
-    public void createSite(String siteName) {
+    public String createSite(String siteName) {
         if (siteExists(siteName)) {
-            System.out.println("El sitio ya existe en el archivo.");
-            return;
+            System.out.println("El sitio ya existe en el archivo.");            
+            return "El sitio ya existe.";
         }
 
         String newEntry = "\n[" + siteName + "]\n" + "nombre = \"" + siteName + "\"\n";
@@ -54,7 +54,10 @@ public class SiteManager {
             System.out.println("Sitio agregado correctamente.");
         } catch (IOException e) {
             System.out.println("Error al escribir en el archivo TOML.");
+            return "Error al escribir en el archivo TOML.";
         }
+        
+        return "Sitio agregado correctamente";
     }
 
     public boolean siteExists(String siteName) {

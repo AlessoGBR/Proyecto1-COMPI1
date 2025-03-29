@@ -1,0 +1,86 @@
+package com.mycompany.back_compi1.Parsers.sHTTP;
+
+import java_cup.runtime.*;
+import com.mycompany.back_compi1.Parsers.SHTTPRequest;
+import java.util.ArrayList;
+import java.util.List;
+
+parser code{:
+
+    private SHTTPRequest request;
+
+    public SHTTPRequest getRequest() {
+            return request;
+    }
+
+    public void syntax_error(Symbol token) {
+        System.out.println("Syntax error: " + token.value + " at line " + token.left);
+    }
+
+    public void unrecovered_syntax_error(Symbol token) {
+
+    }
+
+:}
+
+terminal String ID, BODY;
+terminal String CREAR, ELIMINAR, AGREGAR, MODIFICAR;
+terminal GET, POST, PATCH, DELETE, SITIO, PAGINA;
+
+non terminal SHTTPRequest shttp_request;
+non terminal String method, target, body, accion,objetivo, scl_instruction;
+non terminal ArrayList<String> params;
+
+start with shttp_request;
+
+shttp_request ::= method:m target:t scl_instruction:s body:b
+    {:
+        RESULT = new SHTTPRequest(m, t, s, (b != null ? b : ""));
+    :}
+    ;
+
+method  ::=
+    GET    {: RESULT = "GET";   :} |
+    POST   {: RESULT = "POST";   :} |
+    DELETE {: RESULT = "DELETE";   :}|
+    PATCH  {: RESULT = "PATCH";   :}|
+    ;
+
+target  ::=
+    SITIO   {: RESULT = "SITIO";   :} |
+    PAGINA  {: RESULT = "PAGINA";   :}
+    ;
+
+
+scl_instruction ::= accion:a objetivo:b params:p
+    {:
+        RESULT = a + " " + b + " " + (p.isEmpty() ? "" : " " + String.join(" ", p));
+    :}
+    ;
+
+accion ::=
+    CREAR     {: RESULT = "crear"; :} |
+    AGREGAR   {: RESULT = "agregar"; :} |
+    ELIMINAR  {: RESULT = "eliminar"; :} |
+    MODIFICAR {: RESULT = "modificar"; :}
+    ;
+
+objetivo ::=
+    SITIO   {: RESULT = "sitio " ; :} |
+    PAGINA  {: RESULT = "pagina " ; :}
+    ;
+
+params ::= ID:p params:ps
+    {:
+        ps.add(0, p);
+        RESULT = ps;
+    :}
+    | ID:p
+    {:
+        RESULT = new ArrayList<>(List.of(p));
+    :}
+    ;
+
+body ::= BODY:b          {: RESULT = b;    :}
+  ;
+

@@ -6,8 +6,11 @@ package com.mycompany.back_compi1.Server;
 
 import com.mycompany.back_compi1.Datos.Response;
 import com.mycompany.back_compi1.Datos.SiteManager;
-import com.mycompany.back_compi1.Parsers.SHTTPParser;
+import com.mycompany.back_compi1.Lexer.sHTTP.sHTTPLexer;
 import com.mycompany.back_compi1.Parsers.SHTTPRequest;
+import com.mycompany.back_compi1.Parsers.sHTTP.Parser;
+import java.io.BufferedReader;
+import java.io.StringReader;
 
 /**
  *
@@ -22,8 +25,19 @@ public class RequestHandler {
     }
 
     public Response processRequest(String message) {
-        SHTTPParser parser = new SHTTPParser();
-        SHTTPRequest request = parser.parse(message);
+        SHTTPRequest request = null;
+        try {
+            sHTTPLexer lexer = new sHTTPLexer(new BufferedReader(new StringReader(message)));
+            Parser parser = new Parser(lexer);
+            Object resultado = parser.parse().value;
+            System.out.println("parser result: " + resultado);
+            System.out.println("tipo de resultado: " + resultado.getClass().getName());
+            if (resultado instanceof SHTTPRequest) {
+                request = (SHTTPRequest) resultado;
+            }
+        } catch (Exception e) {
+            throw new RuntimeException("Error en el parseo de sHTTP: " + e.getMessage(), e);
+        }
 
         switch (request.getMethod()) {
             case "GET":
@@ -48,8 +62,8 @@ public class RequestHandler {
 
     private Response handlePost(SHTTPRequest request) {
         if ("SITIO".equals(request.getTarget())) {
-            siteManager.createSite(request.getInstruction());
-            return new Response("EXITO -> ", "Sitio creado exitosamente.");
+            String crear = siteManager.createSite(request.getInstruction());
+            return new Response("RESPUESTA -> ", crear);
         }
         return new Response("ERROR -> ", "Objetivo desconocido");
     }

@@ -29,7 +29,7 @@ public class WebSocketServidor {
         log("MENSAJE SERVIDOR -> Mensaje recibido de " + session.getId() + ": " + message);    
         Response response = requestHandler.processRequest(message);
         enviarMensaje(session, response.toString());
-    }
+     }
 
     @OnClose
     public void onClose(Session session, CloseReason reason) {
