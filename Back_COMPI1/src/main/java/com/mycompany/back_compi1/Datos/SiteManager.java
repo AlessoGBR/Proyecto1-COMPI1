@@ -12,6 +12,8 @@ import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.file.Files;
+import java.util.List;
+import java.util.ArrayList;
 
 /**
  *
@@ -125,7 +127,7 @@ public class SiteManager {
             while ((line = reader.readLine()) != null) {
                 if (line.trim().equals(fullSection)) {
                     inSection = true;
-                    response.append(SUCCESS);
+                    response.append(SUCCESS + ": ");
                     continue;
                 }
 
@@ -139,7 +141,7 @@ public class SiteManager {
                 }
             }
 
-            return inSection ? response.toString() : SUCCESS + ": ";
+            return inSection ? response.toString() : NOT_FOUND + ": Página no encontrada";
         } catch (IOException e) {
             return ERROR + ": " + e.getMessage();
         }
@@ -148,20 +150,80 @@ public class SiteManager {
     public String processRequest(SCLRequest request) {
         switch (request.getAccion()) {
             case "obtener":
-                break;
-            case "abrir":
-                switch (request.getObjetivo()) {
-                    case "sitio":
-                        return getSite(request);
-                    case "pagina":
-                        return getPagina(request);
-                    default:
-                        return ERROR + ": Objetivo no reconocido: " + request.getObjetivo();
+                if ("sitio".equals(request.getObjetivo())) {
+                    return getSite(request);
                 }
+                if ("pagina".equals(request.getObjetivo())) {
+                    return getPagina(request);
+                }
+                return ERROR + ": Objetivo no reconocido: " + request.getObjetivo();
+
+            case "crear":
+                return createSite(request.getParamStrings());
+
+            case "eliminar":
+                return deleteSite(request.getParamStrings())
+                        ? SUCCESS + ": Sitio eliminado"
+                        : NOT_FOUND + ": Sitio no encontrado";
+
             default:
                 return ERROR + ": Acción no soportada: " + request.getAccion();
         }
-        return "";
+    }
+
+    public boolean deleteSite(String siteName) {
+        try {
+            List<String> lines = Files.readAllLines(configFile.toPath());
+            List<String> newLines = new ArrayList<>();
+            boolean found = false;
+            boolean inSection = false;
+
+            for (String line : lines) {
+                if (line.trim().equals("[" + siteName + "]")) {
+                    found = true;
+                    inSection = true;
+                    continue;
+                }
+                if (inSection && line.trim().startsWith("[")) {
+                    inSection = false;
+                }
+                if (!inSection) {
+                    newLines.add(line);
+                }
+            }
+
+            if (found) {
+                Files.write(configFile.toPath(), newLines);
+            }
+            return found;
+        } catch (IOException e) {
+            return false;
+        }
+    }
+
+    public boolean updateSite(String siteName) {
+        try {
+            List<String> lines = Files.readAllLines(configFile.toPath());
+            List<String> newLines = new ArrayList<>();
+            boolean found = false;
+
+            for (String line : lines) {
+                if (line.trim().equals("[" + siteName + "]")) {
+                    found = true;
+                    newLines.add(line);
+                    newLines.add("modificado = \"true\"");
+                    continue;
+                }
+                newLines.add(line);
+            }
+
+            if (found) {
+                Files.write(configFile.toPath(), newLines);
+            }
+            return found;
+        } catch (IOException e) {
+            return false;
+        }
     }
 
 }

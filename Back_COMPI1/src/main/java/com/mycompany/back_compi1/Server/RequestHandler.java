@@ -14,7 +14,6 @@ import com.mycompany.back_compi1.Parsers.sCL.ParserScl;
 import com.mycompany.back_compi1.Parsers.sHTTP.Parser;
 import java.io.BufferedReader;
 import java.io.StringReader;
-import java_cup.runtime.Symbol;
 
 /**
  *
@@ -31,7 +30,7 @@ public class RequestHandler {
     }
 
     public Response processRequest(String message) {
-        
+
         try {
             sHTTPLexer lexer = new sHTTPLexer(new BufferedReader(new StringReader(message)));
             Parser parser = new Parser(lexer);
@@ -39,7 +38,7 @@ public class RequestHandler {
             sCLLexer sclLexer = new sCLLexer(new BufferedReader(new StringReader(shttpRequest.getInstruction())));
             ParserScl parserScl = new ParserScl(sclLexer);
             sclRequest = (SCLRequest) parserScl.parse().value;
-            
+
         } catch (Exception e) {
             return new Response("ERROR -> ", "ERROR INESPERADO: " + e);
         }
@@ -49,7 +48,7 @@ public class RequestHandler {
                 return handleGet(shttpRequest);
             case "POST":
                 return handlePost(shttpRequest);
-            case "DELTE":
+            case "DELETE":
                 return handleDelete(shttpRequest);
             case "PATCH":
                 return handlePatch(shttpRequest);
@@ -77,17 +76,22 @@ public class RequestHandler {
 
     private Response handleDelete(SHTTPRequest request) {
         if ("SITIO".equals(request.getTarget())) {
-            siteManager.createSite(request.getInstruction());
-            return new Response("EXITO -> ", "Sitio creado exitosamente.");
+            boolean deleted = siteManager.deleteSite(request.getInstruction());
+            return deleted
+                    ? new Response("EXITO -> ", "Sitio eliminado correctamente.")
+                    : new Response("ERROR -> ", "No se encontró el sitio.");
         }
         return new Response("ERROR -> ", "Objetivo desconocido");
     }
 
     private Response handlePatch(SHTTPRequest request) {
         if ("SITIO".equals(request.getTarget())) {
-            siteManager.createSite(request.getInstruction());
-            return new Response("EXITO -> ", "Sitio creado exitosamente.");
+            boolean updated = siteManager.updateSite(request.getInstruction());
+            return updated
+                    ? new Response("EXITO -> ", "Sitio actualizado correctamente.")
+                    : new Response("ERROR -> ", "No se encontró el sitio.");
         }
         return new Response("ERROR -> ", "Objetivo desconocido");
     }
+
 }
