@@ -21,7 +21,7 @@ SITIO = "SITIO"
 PAGINA = "PAGINA"
 
 SCL_TEXT = [a-zA-Z0-9_]+( [a-zA-Z0-9_]+)*
-BODY = \"[^\"]*\"
+BODY = "<"([^<>]|\\n|\\r|<[^<>]*>)*">"
 WHITESPACE = [ \t\r\n]+
 
 %{

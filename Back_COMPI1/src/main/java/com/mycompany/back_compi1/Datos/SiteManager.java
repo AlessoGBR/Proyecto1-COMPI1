@@ -48,10 +48,16 @@ public class SiteManager {
         return configFile.getAbsolutePath();
     }
 
-    public String createSite(String siteName) {
+    public String createSite(SCLRequest request) {
+        if (request.getParams().isEmpty()) {
+            return ERROR + " Se necesita al menos el nombre del sitio.";
+        }
+
+        String siteName = request.getParams().get(0);
+
         if (siteExists(siteName)) {
             System.out.println("El sitio ya existe en el archivo.");
-            return "El sitio ya existe.";
+            return ERROR + " El sitio ya existe.";
         }
 
         String newEntry = "\n[" + siteName + "]\n" + "nombre = \"" + siteName + "\"\n";
@@ -60,10 +66,44 @@ public class SiteManager {
             System.out.println("Sitio agregado correctamente.");
         } catch (IOException e) {
             System.out.println("Error al escribir en el archivo TOML.");
-            return "Error al escribir en el archivo TOML.";
+            return ERROR + " Error al escribir en el archivo TOML.";
         }
 
-        return "Sitio agregado correctamente";
+        return SUCCESS + " Sitio agregado correctamente";
+    }
+
+    public String createPage(SCLRequest request) {
+        if (request.getParams().size() < 2) {
+            return ERROR + ": se requiere el nombre del sitio y de la pagina";
+        }
+
+        String siteName = request.getParams().get(0);
+        String pageName = request.getParams().get(1);
+        String fullSection = "[" + siteName + "." + pageName + "]";
+
+        if (!siteExists(siteName)) {
+            return ERROR + ": el sitio " + siteName + " no existe";
+        }
+
+        try {
+            String content = Files.readString(configFile.toPath());
+            if (content.contains(fullSection)) {
+                return ERROR + "La pagina " + pageName + " ya existe en el sitio " + siteName;
+            }
+        } catch (IOException e) {
+            return ERROR + ": error al leer el archivo.";
+        }
+
+        String newEntry = "\n" + fullSection + "\n nombre = " + pageName;
+
+        try (BufferedWriter writer = new BufferedWriter(new FileWriter(configFile, true))) {
+            writer.write(newEntry);
+            System.out.println("Página agregada correctamente.");
+        } catch (IOException e) {
+            return ERROR + ": error al escribir en el archivo TOML.";
+        }
+
+        return SUCCESS + " Pagina " + pageName + " agregada correctamente al sitio " + siteName;
     }
 
     public boolean siteExists(String siteName) {
@@ -159,7 +199,7 @@ public class SiteManager {
                 return ERROR + ": Objetivo no reconocido: " + request.getObjetivo();
 
             case "crear":
-                return createSite(request.getParamStrings());
+            //return createSite(request.getParamStrings());
 
             case "eliminar":
                 return deleteSite(request.getParamStrings())
@@ -185,6 +225,37 @@ public class SiteManager {
                     continue;
                 }
                 if (inSection && line.trim().startsWith("[")) {
+                    inSection = false;
+                }
+                if (!inSection) {
+                    newLines.add(line);
+                }
+            }
+
+            if (found) {
+                Files.write(configFile.toPath(), newLines);
+            }
+            return found;
+        } catch (IOException e) {
+            return false;
+        }
+    }
+
+    public boolean deletePage(String siteName, String pageName) {
+        String fullSection = "[" + siteName + "." + pageName + "]";
+        try {
+            List<String> lines = Files.readAllLines(configFile.toPath());
+            List<String> newLines = new ArrayList<>();
+            boolean found = false;
+            boolean inSection = false;
+
+            for (String line : lines) {
+                if (line.trim().equals(fullSection)) {
+                    found = true;
+                    inSection = true;
+                    continue;
+                }
+                if (inSection && line.trim().startsWith("[") && line.trim().endsWith("]")) {
                     inSection = false;
                 }
                 if (!inSection) {

@@ -66,9 +66,12 @@ public class RequestHandler {
         return new Response("ERROR -> ", "Objetivo desconocido");
     }
 
-        private Response handlePost(SHTTPRequest request) {
+    private Response handlePost(SHTTPRequest request) {
         if ("SITIO".equals(request.getTarget())) {
-            String crear = siteManager.createSite(request.getInstruction());
+            String crear = siteManager.createSite(sclRequest);
+            return new Response("RESPUESTA -> ", crear);
+        } else if ("PAGINA".equals(request.getTarget())) {
+            String crear = siteManager.createPage(sclRequest);
             return new Response("RESPUESTA -> ", crear);
         }
         return new Response("ERROR -> ", "Objetivo desconocido");
@@ -80,6 +83,16 @@ public class RequestHandler {
             return deleted
                     ? new Response("EXITO -> ", "Sitio eliminado correctamente.")
                     : new Response("ERROR -> ", "No se encontró el sitio.");
+        } else if ("PAGINA".equals(request.getTarget())) {
+            if (sclRequest.getParams().size() < 2) {
+                return new Response("ERROR -> ", "Se requiere nombre del sitio y página.");
+            }
+            String siteName = sclRequest.getParams().get(0);
+            String pageName = sclRequest.getParams().get(1);
+            boolean deleted = siteManager.deletePage(siteName, pageName);
+            return deleted
+                    ? new Response("EXITO -> ", "Página eliminada correctamente.")
+                    : new Response("ERROR -> ", "No se encontró la página.");
         }
         return new Response("ERROR -> ", "Objetivo desconocido");
     }
