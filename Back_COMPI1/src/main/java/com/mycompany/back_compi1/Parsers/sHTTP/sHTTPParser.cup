@@ -33,11 +33,6 @@ start with shttp_request;
 
 shttp_request ::= method:m target:t scl_instruction:s body:b
     {:
-    System.out.println("Parser: creando SHTTPRequest con:");
-            System.out.println(" - Método: " + m);
-            System.out.println(" - Target: " + t);
-            System.out.println(" - Instrucción: " + s);
-            System.out.println(" - Body: " + (b != null ? b : ""));
         RESULT = new SHTTPRequest(m, t, s, (b != null ? b : ""));
     :}
     ;

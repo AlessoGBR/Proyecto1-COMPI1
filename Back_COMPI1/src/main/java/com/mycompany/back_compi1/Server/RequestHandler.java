@@ -66,7 +66,7 @@ public class RequestHandler {
         return new Response("ERROR -> ", "Objetivo desconocido");
     }
 
-    private Response handlePost(SHTTPRequest request) {
+        private Response handlePost(SHTTPRequest request) {
         if ("SITIO".equals(request.getTarget())) {
             String crear = siteManager.createSite(request.getInstruction());
             return new Response("RESPUESTA -> ", crear);
